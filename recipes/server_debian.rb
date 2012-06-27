@@ -32,7 +32,7 @@ include_recipe "postgresql::client"
 case node[:postgresql][:version]
 when "8.3"
   node.default[:postgresql][:ssl] = "off"
-else 
+else
   node.default[:postgresql][:ssl] = "true"
 end
 case node[:platform_version]
@@ -111,7 +111,7 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
             :wal_writer_delay => node[:postgresql][:wal_writer_delay],
             :checkpoint_segments => node[:postgresql][:checkpoint_segments],
             :checkpoint_timeout => node[:postgresql][:checkpoint_timeout],
-            :hot_standby => "on",
+            :hot_standby => node[:postgresql][:hot_standby],
             :hot_standby_feedback => node[:postgresql][:hot_standby_feedback],
             :effective_cache_size => node[:postgresql][:effective_cache_size],
             :default_statistics_target => node[:postgresql][:default_statistics_target],
@@ -120,7 +120,8 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
             :log_rotation_size => node[:postgresql][:log_rotation_size],
             :temp_tablespaces => node[:postgresql][:temp_tablespaces],
             :wal_level => node[:postgresql][:wal_level],
-            :max_connections => node[:postgresql][:max_connections]
+            :max_connections => node[:postgresql][:max_connections],
+            :text_search_config => node[:postgresql][:text_search_config]
             )
 #  notifies :restart, resources(:service => "postgresql")
 end

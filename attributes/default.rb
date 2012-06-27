@@ -73,7 +73,7 @@ end
 
 default[:postgresql][:default_statistics_target]=100
 default[:postgresql][:max_fsm_pages]=500000
-default[:postgresql][:max_fsm_relations]=10000 
+default[:postgresql][:max_fsm_relations]=10000
 default[:postgresql][:logging_collector]="on"
 default[:postgresql][:log_rotation_age]="1d"
 default[:postgresql][:log_rotation_size]="100MB"
@@ -110,6 +110,7 @@ default[:postgresql][:temp_tablespaces]="/var/tmp/postgresql"
 default[:postgresql][:local_authentication]="md5"
 default[:postgresql][:encoding]="UTF8"
 default[:postgresql][:locale]="en_US.UTF-8"
+default[:postgresql][:text_search_config]="pg_catalog.english"
 default[:postgresql][:max_connections]="65535"
 # Hot standby Settings
 default[:postgresql][:wal_level]="hot_standby"
