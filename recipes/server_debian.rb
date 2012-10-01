@@ -50,8 +50,8 @@ else
   end
 end
 
-package "postgresql-9.1"
-package "postgresql-contrib-9.1"
+package "postgresql-9.2"
+package "postgresql-contrib-9.2"
 
 directory "#{node[:postgresql][:temp_tablespaces]}" do
   owner "postgres"
@@ -125,6 +125,13 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
             )
 #  notifies :restart, resources(:service => "postgresql")
 end
+
+directory "#{node[:postgresql][:dir]}" do
+  owner "postgres"
+  group "postgres"
+  action :create
+end
+
 template "#{node[:postgresql][:dir]}/pg_hba.conf" do
   source "pg_hba.conf.erb"
   owner "postgres"
@@ -158,7 +165,7 @@ directory "#{node[:postgresql][:wal_directory]}" do
 end
 
 execute "init-postgres" do
-  command "/usr/lib/postgresql/9.1/bin/initdb -D #{node[:postgresql][:data_directory]} -X #{node[:postgresql][:wal_directory]} --pwfile=#{node[:postgresql][:dir]}/.org_grok --encoding=#{node[:postgresql][:encoding]} --locale=#{node[:postgresql][:locale]} -A #{node[:postgresql][:local_authentication]}"
+  command "/usr/lib/postgresql/9.2/bin/initdb -D #{node[:postgresql][:data_directory]} -X #{node[:postgresql][:wal_directory]} --pwfile=#{node[:postgresql][:dir]}/.org_grok --encoding=#{node[:postgresql][:encoding]} --locale=#{node[:postgresql][:locale]} -A #{node[:postgresql][:local_authentication]}"
   action :run
   user "postgres"
   not_if { FileTest.directory?("#{node[:postgresql][:data_directory]}") }
