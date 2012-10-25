@@ -101,13 +101,13 @@ end
 
 # Server Settings
 default[:postgresql][:data_path]="/var/lib/postgresql"
-default[:postgresql][:data_directory]="#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data"
+default[:postgresql][:data_directory]="#{[node[:postgresql][:data_path]]}/#{[node[:postgresql][:version]]}/data"
 default[:postgresql][:wal_directory]="#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/pg_xlog"
 default[:postgresql][:hba_file]="#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data/pg_hba.conf"
 default[:postgresql][:ident_file]="#{node[:postgresql][:data_path]}/pg_ident.conf"
 default[:postgresql][:external_pid_file]="#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/postgresql.pid"
 default[:postgresql][:temp_tablespaces]="/var/tmp/postgresql"
-default[:postgresql][:local_authentication]="md5"
+default[:postgresql][:local_authentication]="trust"
 default[:postgresql][:encoding]="UTF8"
 default[:postgresql][:locale]="en_US.UTF-8"
 default[:postgresql][:text_search_config]="pg_catalog.english"
@@ -117,7 +117,7 @@ default[:postgresql][:wal_level]="hot_standby"
 default[:postgresql][:hot_standby]="on"
 default[:postgresql][:hot_standby_feedback]="on"
 default[:postgresql][:replicas]=["10.0.0.0/8"]
-
+default[:postgresql][:allow]={ "10.0.0.0/8" => "md5" }
 # Misc Settings
 default[:postgresql][:swappiness]="15"
 default[:postgresql][:kernel_sem]="4096 6553555 1600 65535"

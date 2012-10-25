@@ -2,8 +2,10 @@
 # Cookbook Name:: postgresql
 # Recipe:: server
 #
+# Author:: Scott M. Likens (<scott@likens.us>)
 # Author:: Joshua Timberman (<joshua@opscode.com>)
-# Author:: Lamont Granquist (<lamont@opscode.com>)#
+# Author:: Lamont Granquist (<lamont@opscode.com>)
+#
 # Copyright 2009-2011, Opscode, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +29,10 @@ include_recipe "postgresql::client"
 node.set_unless[:postgresql][:password] = secure_password
 node.save unless Chef::Config[:solo]
 
+cookbook_file "/etc/security/limits.d/postgres.conf" do
+  source "postgres.conf"
+end
+
 include_recipe "postgresql::client"
 
 case node[:postgresql][:version]
@@ -35,22 +41,18 @@ when "8.3"
 else
   node.default[:postgresql][:ssl] = "true"
 end
-case node[:platform_version]
-when "12.04"
-  log "No package needed"
-else
-  apt_repository "postgresql-#{node[:postgresql][:version]}" do
-    uri "http://ppa.launchpad.net/pitti/postgresql/ubuntu"
-    distribution node['lsb']['codename']
-    components ["main"]
-    key "8683D8A2"
-    keyserver "keyserver.ubuntu.com"
-    deb_src true
-    action :add
-  end
+
+apt_repository "postgresql-#{node[:postgresql][:version]}" do
+  uri "http://ppa.launchpad.net/pitti/postgresql/ubuntu"
+  distribution node['lsb']['codename']
+  components ["main"]
+  key "8683D8A2"
+  keyserver "keyserver.ubuntu.com"
+  deb_src true
+  action :add
 end
 
-package "postgresql-9.2"
+package "postgresql-server-dev-9.2"
 package "postgresql-contrib-9.2"
 
 directory "#{node[:postgresql][:temp_tablespaces]}" do
@@ -65,24 +67,32 @@ service "postgresql" do
   case node['platform']
   when "ubuntu"
     case
-    when node['platform_version'].to_f <= 10.04
-      service_name "postgresql-#{node['postgresql']['version']}"
-    else
-      service_name "postgresql"
-    end
+     when node['platform_version'].to_f <= 10.04
+       service_name "postgresql-#{node['postgresql']['version']}"
+     else
+       service_name "postgresql"
+     end
   when "debian"
     case
-    when platform_version.to_f <= 5.0
-      service_name "postgresql-#{node['postgresql']['version']}"
-    when platform_version =~ /squeeze/
-      service_name "postgresql"
-    else
-      service_name "postgresql"
-    end
+     when platform_version.to_f <= 5.0
+       service_name "postgresql-#{node['postgresql']['version']}"
+     when platform_version =~ /squeeze/
+       service_name "postgresql"
+     else
+       service_name "postgresql"
+     end
   end
   supports :restart => true, :status => true, :reload => true
   action :stop
   not_if { File.exists?("/var/run/postgres.initdb.done") }
+end
+
+directory "/var/tmp/postgresql/#{node[:postgresql][:version]}/temp" do
+  owner "postgres"
+  group "postgres"
+  mode 0600
+  recursive true
+  action :create
 end
 
 directory "#{node[:postgresql][:temp_tablespaces]}" do
@@ -92,14 +102,19 @@ directory "#{node[:postgresql][:temp_tablespaces]}" do
   recursive true
 end
 
+directory "#{node[:postgresql][:dir]}" do
+  action :create
+  recursive true
+end
+
 template "#{node[:postgresql][:dir]}/postgresql.conf" do
   source "debian.postgresql.conf.erb"
   owner "postgres"
   group "postgres"
   mode 0600
   variables(
-            :data_directory => node[:postgresql][:data_directory],
-            :hba_file => node[:postgresql][:hba_file],
+            :data_directory => "#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data",
+            :hba_file => "/etc/postgresql/#{node[:postgresql][:version]}/main/pg_hba.conf",
             :ident_file => node[:postgresql][:ident_file],
             :external_pid_file => node[:postgresql][:external_pid_file],
             :shared_buffers => node[:postgresql][:shared_buffers],
@@ -118,7 +133,8 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
             :logging_collector => node[:postgresql][:logging_collector],
             :log_rotation_age => node[:postgresql][:log_rotation_age],
             :log_rotation_size => node[:postgresql][:log_rotation_size],
-            :temp_tablespaces => node[:postgresql][:temp_tablespaces],
+            :temp_tablespaces => "/var/tmp/postgresql/#{node[:postgresql][:version]}/temp",
+# #{node[:postgresql][:temp_tablespaces],
             :wal_level => node[:postgresql][:wal_level],
             :max_connections => node[:postgresql][:max_connections],
             :text_search_config => node[:postgresql][:text_search_config]
@@ -139,7 +155,8 @@ template "#{node[:postgresql][:dir]}/pg_hba.conf" do
   mode 0600
   variables(
             :method => node[:postgresql][:local_authentication],
-            :replica => node[:postgresql][:replicas]
+            :replica => node[:postgresql][:replicas],
+            :allow => node[:postgresql][:allow].to_hash
             )
 end
 
@@ -164,12 +181,10 @@ directory "#{node[:postgresql][:wal_directory]}" do
   recursive true
 end
 
-execute "init-postgres" do
-  command "/usr/lib/postgresql/9.2/bin/initdb -D #{node[:postgresql][:data_directory]} -X #{node[:postgresql][:wal_directory]} --pwfile=#{node[:postgresql][:dir]}/.org_grok --encoding=#{node[:postgresql][:encoding]} --locale=#{node[:postgresql][:locale]} -A #{node[:postgresql][:local_authentication]}"
-  action :run
-  user "postgres"
-  not_if { FileTest.directory?("#{node[:postgresql][:data_directory]}") }
-  notifies :create_if_missing, "file[/var/run/postgres.initdb.done]", :immediate
+# If we have a lost+found directory in the wal path let's make sure it's gone.
+directory "#{node[:postgresql][:wal_directory]}/lost+found" do
+  action :delete
+  recursive true
 end
 
 sysctl "Raise kernel.shmmax" do
@@ -189,17 +204,27 @@ sysctl "Swappiness of 15" do
   variables 'vm.swappiness' => node[:postgresql][:swappiness]
 end
 
-template "#{node[:postgresql][:hba_file]}" do
-  source "pg_hba.conf.erb"
-  owner "postgres"
-  group "postgres"
-  mode 0600
-  variables(
-            :method => node[:postgresql][:local_authentication],
-            :replica => node[:postgresql][:replicas]
-            )
-#  notifies :reload, resources(:service => "postgresql"), :immediately
+execute "init-postgres" do
+  command "/usr/lib/postgresql/9.2/bin/initdb -D #{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data -X #{node[:postgresql][:wal_directory]} --pwfile=#{node[:postgresql][:dir]}/.org_grok --encoding=#{node[:postgresql][:encoding]} --locale=#{node[:postgresql][:locale]} -A #{node[:postgresql][:local_authentication]}"
+  action :run
+  user "postgres"
+  not_if { FileTest.directory?("#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data") }
+  notifies :create_if_missing, "file[/var/run/postgres.initdb.done]", :immediate
 end
+
+
+# NOTE: Not required
+# template "#{node[:postgresql][:hba_file]}" do
+#   source "pg_hba.conf.erb"
+#   owner "postgres"
+#   group "postgres"
+#   mode 0600
+#   variables(
+#             :method => node[:postgresql][:local_authentication],
+#             :replica => node[:postgresql][:replicas]
+#             )
+# #  notifies :reload, resources(:service => "postgresql"), :immediately
+# end
 
 execute "start postgresql" do
   command "/bin/bash --login -c 'LC_ALL="" /etc/init.d/postgresql start'"

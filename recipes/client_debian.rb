@@ -29,7 +29,7 @@ apt_repository "postgresql-#{node[:postgresql][:version]}" do
   action :add
 end
 
-package "postgresql-client"
+package "postgresql-client-9.2"
 package "libpq-dev"
 package "make"
 

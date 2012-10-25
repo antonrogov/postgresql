@@ -89,7 +89,9 @@ host    all             all             ::1/128                 <%= @method %>
 <% @replica.each do |p| %>
 host    replication     postgres        <%= p %>                md5
 <% end %>
-host    all             all             10.0.0.0/8              <%= @method %>
+<% @allow.each_pair do |k,v| %>
+host    all             all             <%= k %>                <%= v %>
+<% end %>
 # Allow replication connections from localhost, by a user with the
 # replication privilege.
 #local   replication     postgres                                trust

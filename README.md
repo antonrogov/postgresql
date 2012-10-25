@@ -16,7 +16,7 @@ Requirements
 
 Tested on:
 
-* Ubuntu 11.10
+* Ubuntu 11.10, 12.04
 
 ## Cookboooks
 
@@ -39,6 +39,7 @@ Attributes
 The following attributes are set based on the platform, see the
 `attributes/default.rb` file for default values.
 
+* `node[`postgersql`][`allow`]` - Hash - Specifies the ip address range to be allowed to connect.
 * `node['postgresql']['data_directory']` - Specifies the directory to use for data storage.
 * `node['postgresql']['wal_directory']` - Speciies the directory to use for WAL storage.
 * `node['postgresql']['data_path']` - Base directory structure for the 2 paths above to be constructed from.

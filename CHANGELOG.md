@@ -1,3 +1,10 @@
+## wip:
+
+* Added support allowing you to define what hosts you allow in the role.
+* Added the limits file by default
+* Assumed we are going for 9.2
+* Refinements to make the install smoother
+
 ## v0.99.4:
 
 * [COOK-421] - config template is malformed
