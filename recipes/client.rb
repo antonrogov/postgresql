@@ -1,4 +1,4 @@
-case node[:platform]
-when "ubuntu"
-include_recipe "postgresql::client_debian"
+case node['platform_family']
+when "debian"
+require_recipe "postgresql::client_debian"
 end

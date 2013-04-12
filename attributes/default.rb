@@ -121,3 +121,5 @@ default[:postgresql][:allow]={ "10.0.0.0/8" => "md5" }
 # Misc Settings
 default[:postgresql][:swappiness]="15"
 default[:postgresql][:kernel_sem]="4096 6553555 1600 65535"
+default[:postgresql][:temp_buffers]="8MB"
+default[:postgresql][:overcommit]=0

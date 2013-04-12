@@ -67,6 +67,8 @@ The following attributes are set based on the platform, see the
 * `node['postgresql']['effective_cache_size']` - Sets the planner's assumption about the effective size of the disk cache that is available to a single query. This is factored into estimates of the cost of using an index; a higher value makes it more likely index scans will be used, a lower value makes it more likely sequential scans will be used. When setting this parameter you should consider both PostgreSQL's shared buffers and the portion of the kernel's disk cache that will be used for PostgreSQL data files. Also, take into account the expected number of concurrent queries on different tables, since they will have to share the available space. This parameter has no effect on the size of shared memory allocated by PostgreSQL, nor does it reserve kernel disk cache; it is used only for estimation purposes. The system also does not assume data remains in the disk cache between queries. The default is 128 megabytes (128MB).
 * `node['postgresql']['maintenance_work_mem']` - Specifies the maximum amount of memory to be used by maintenance operations, such as VACUUM, CREATE INDEX, and ALTER TABLE ADD FOREIGN KEY. It defaults to 16 megabytes (16MB). Since only one of these operations can be executed at a time by a database session, and an installation normally doesn't have many of them running concurrently, it's safe to set this value significantly larger than work_mem. Larger settings might improve performance for vacuuming and for restoring database dumps.
 * `node['postgresql']['work_mem']` - Specifies the amount of memory to be used by internal sort operations and hash tables before writing to temporary disk files. The value defaults to one megabyte (1MB). Note that for a complex query, several sort or hash operations might be running in parallel; each operation will be allowed to use as much memory as this value specifies before it starts to write data into temporary files. Also, several running sessions could be doing such operations concurrently. Therefore, the total memory used could be many times the value of work_mem; it is necessary to keep this fact in mind when choosing the value. Sort operations are used for ORDER BY, DISTINCT, and merge joins. Hash tables are used in hash joins, hash-based aggregation, and hash-based processing of IN subqueries.
+* `node['postgresql']['overcommit']` - If you need to oom-proof your postgresql server so it never runs out of memory, set this to 2.
+
 
 Default Attributes
 ==========
@@ -75,6 +77,7 @@ Default Attributes
 * `default[:postgresql][:logging_collector]` - on
 * `default[:postgresql][:log_rotation_age]` - 1d
 * `default[:postgresql][:log_rotation_size]` - 100MB
+* `default[:postgresql][:temp_buffers]` - 8MB
 * `default[:postgresql][:checkpoint_timeout]` - 5min
 * `default[:postgresql][:checkpoint_completion_target]` - 0.5
 * `default[:postgresql][:checkpoint_warning]` - 30s

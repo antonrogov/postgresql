@@ -21,13 +21,14 @@
 
 # Include the right "family" recipe for installing the server
 # since they do things slightly differently.
-case node.platform
-when "redhat", "centos", "fedora", "suse", "scientific", "amazon"
+# Include the right "family" recipe for installing the server
+# since they do things slightly differently.
+case node['platform_family']
+when "rhel", "fedora", "suse"
   quit "I have nothing to serve here"
-when "debian", "ubuntu"
-  include_recipe "postgresql::server_debian"
+when "debian"
+  require_recipe "postgresql::server_debian"
 end
-
 
 # Default PostgreSQL install has 'ident' checking on unix user 'postgres'
 # and 'md5' password checking with connections from 'localhost'. This script

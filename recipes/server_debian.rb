@@ -32,8 +32,8 @@ node.save unless Chef::Config[:solo]
 cookbook_file "/etc/security/limits.d/postgres.conf" do
   source "postgres.conf"
 end
-
-include_recipe "postgresql::client"
+require_recipe "postgresql::pgdg"
+require_recipe "postgresql::client"
 
 case node[:postgresql][:version]
 when "8.3"
@@ -42,26 +42,10 @@ else
   node.default[:postgresql][:ssl] = "true"
 end
 
-apt_repository "postgresql-#{node[:postgresql][:version]}" do
-  uri "http://ppa.launchpad.net/pitti/postgresql/ubuntu"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "8683D8A2"
-  keyserver "keyserver.ubuntu.com"
-  deb_src true
-  action :add
-end
 
 package "postgresql-server-dev-9.2"
 package "postgresql-contrib-9.2"
 
-directory "#{node[:postgresql][:temp_tablespaces]}" do
-  owner "postgres"
-  group "postgres"
-  mode 0755
-  action :create
-  recursive true
-end
 
 service "postgresql" do
   case node['platform']
@@ -95,14 +79,22 @@ directory "/var/tmp/postgresql/#{node[:postgresql][:version]}/temp" do
   action :create
 end
 
-directory "#{node[:postgresql][:temp_tablespaces]}" do
+directory node['postgresql']['temp_tablespaces'] do
   owner "postgres"
   group "postgres"
-  mode 0600
+  mode 0755
+  action :create
   recursive true
 end
 
-directory "#{node[:postgresql][:dir]}" do
+directory node['postgresql']['dir'] do
+  action :create
+  recursive true
+end
+
+directory node['postgresql']['data_path'] do
+  owner "postgres"
+  group "postgres"
   action :create
   recursive true
 end
@@ -122,6 +114,7 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
             :maintenance_work_mem => node[:postgresql][:maintenance_work_mem],
             :max_stack_depth => node[:postgresql][:max_stack_depth],
             :wal_level => node[:postgresql][:wal_level],
+            :temp_buffers => node[:postgresql][:temp_buffers],
             :wal_buffers => node[:postgresql][:wal_buffers],
             :wal_writer_delay => node[:postgresql][:wal_writer_delay],
             :checkpoint_segments => node[:postgresql][:checkpoint_segments],
@@ -134,18 +127,11 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
             :log_rotation_age => node[:postgresql][:log_rotation_age],
             :log_rotation_size => node[:postgresql][:log_rotation_size],
             :temp_tablespaces => "/var/tmp/postgresql/#{node[:postgresql][:version]}/temp",
-# #{node[:postgresql][:temp_tablespaces],
             :wal_level => node[:postgresql][:wal_level],
             :max_connections => node[:postgresql][:max_connections],
             :text_search_config => node[:postgresql][:text_search_config]
             )
 #  notifies :restart, resources(:service => "postgresql")
-end
-
-directory "#{node[:postgresql][:dir]}" do
-  owner "postgres"
-  group "postgres"
-  action :create
 end
 
 template "#{node[:postgresql][:dir]}/pg_hba.conf" do
@@ -158,6 +144,7 @@ template "#{node[:postgresql][:dir]}/pg_hba.conf" do
             :replica => node[:postgresql][:replicas],
             :allow => node[:postgresql][:allow].to_hash
             )
+#  notifies :restart, resources(:service => "postgresql")
 end
 
 file "/var/run/postgres.initdb.done" do
@@ -172,9 +159,7 @@ file "#{node[:postgresql][:dir]}/.org_grok" do
   content node[:postgresql][:password].to_s
 end
 
-# TODO: Mount volumes
-
-directory "#{node[:postgresql][:wal_directory]}" do
+directory node['postgresql']['wal_directory'] do
   owner "postgres"
   group "postgres"
   action :create
@@ -202,6 +187,24 @@ end
 
 sysctl "Swappiness of 15" do
   variables 'vm.swappiness' => node[:postgresql][:swappiness]
+end
+
+if node['postgresql']['overcommit'] == 2
+  sysctl "vm.overcommit_memory" do
+    variables 'vm.overcommit_memory' => 2
+  end
+  sysctl "vm.overcommit_ratio" do
+    variables 'vm.overcommit_ratio' => 100
+  end
+  if Chef::Config[:solo]
+    log "fs.file-max not available under lxc" do
+      level :info
+    end
+  else
+    sysctl "fs.file-max for postgres" do 
+      variables 'fs.file-max' => 999999
+    end
+  end
 end
 
 execute "init-postgres" do

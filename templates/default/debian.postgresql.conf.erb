@@ -103,7 +103,7 @@ max_connections = <%= @max_connections %>			# (change requires restart)
 
 shared_buffers = <%= @shared_buffers %>MB
 					# (change requires restart)
-#temp_buffers = 8MB			# min 800kB
+temp_buffers = <%= @temp_buffers %>
 #max_prepared_transactions = 0		# zero disables the feature
 					# (change requires restart)
 # Note:  Increasing max_prepared_transactions costs ~600 bytes of shared memory

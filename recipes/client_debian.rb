@@ -19,20 +19,9 @@
 # limitations under the License.
 #
 
-apt_repository "postgresql-#{node[:postgresql][:version]}" do
-  uri "http://ppa.launchpad.net/pitti/postgresql/ubuntu"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "8683D8A2"
-  keyserver "keyserver.ubuntu.com"
-  deb_src true
-  action :add
-end
+require_recipe "postgresql::pgdg"
 
 package "postgresql-client-9.2"
 package "libpq-dev"
 package "make"
-
-#gem_package "pg" do
-#  action :nothing
-#end.run_action(:install)
+require_recipe "postgresql::ruby"
