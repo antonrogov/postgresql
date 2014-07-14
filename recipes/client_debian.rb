@@ -19,9 +19,9 @@
 # limitations under the License.
 #
 
-require_recipe "postgresql::pgdg"
+include_recipe "postgresql::pgdg"
 
 package "postgresql-client-#{node[:postgresql][:version]}"
 package "libpq-dev"
 package "make"
-require_recipe "postgresql::ruby"
+include_recipe "postgresql::ruby"

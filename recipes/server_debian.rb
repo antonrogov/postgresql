@@ -23,8 +23,6 @@
 
 ::Chef::Recipe.send(:include, Opscode::OpenSSL::Password)
 
-include_recipe "postgresql::client"
-
 # randomly generate postgres password
 node.set_unless[:postgresql][:password] = secure_password
 node.save unless Chef::Config[:solo]
@@ -32,7 +30,7 @@ node.save unless Chef::Config[:solo]
 cookbook_file "/etc/security/limits.d/postgres.conf" do
   source "postgres.conf"
 end
-include_recipe "postgresql::pgdg"
+
 include_recipe "postgresql::client"
 
 case node[:postgresql][:version]
@@ -42,10 +40,8 @@ else
   node.default[:postgresql][:ssl] = "true"
 end
 
-
 package "postgresql-server-dev-#{node[:postgresql][:version]}"
 package "postgresql-contrib-#{node[:postgresql][:version]}"
-
 
 service "postgresql" do
   case node['platform']
