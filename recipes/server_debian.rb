@@ -32,8 +32,8 @@ node.save unless Chef::Config[:solo]
 cookbook_file "/etc/security/limits.d/postgres.conf" do
   source "postgres.conf"
 end
-require_recipe "postgresql::pgdg"
-require_recipe "postgresql::client"
+include_recipe "postgresql::pgdg"
+include_recipe "postgresql::client"
 
 case node[:postgresql][:version]
 when "8.3"
@@ -43,8 +43,8 @@ else
 end
 
 
-package "postgresql-server-dev-9.2"
-package "postgresql-contrib-9.2"
+package "postgresql-server-dev-#{node[:postgresql][:version]}"
+package "postgresql-contrib-#{node[:postgresql][:version]}"
 
 
 service "postgresql" do
@@ -172,37 +172,41 @@ directory "#{node[:postgresql][:wal_directory]}/lost+found" do
   recursive true
 end
 
-sysctl "Raise kernel.shmmax" do
-  variables 'kernel.shmmax' => node[:postgresql][:total_memory]
+sysctl_param 'kernel.shmmax' do
+  value node[:postgresql][:total_memory]
 end
 
-sysctl "Raise kernel.shmall" do
-  variables 'kernel.shmall' => node[:postgresql][:total_memory] / 4096
-  not_if { node[:postgresql][:total_memory]/4096 < 2097152 }
+shm = node[:postgresql][:total_memory] / 4096
+unless shm < 2097152
+  sysctl_param 'kernel.shmall' do
+    value shm
+  end
 end
 
-sysctl "Modify kernel.sem" do
-  variables 'kernel.sem' => node[:postgresql][:kernel_sem]
+sysctl_param 'kernel.sem' do
+  value node[:postgresql][:kernel_sem]
 end
 
-sysctl "Swappiness of 15" do
-  variables 'vm.swappiness' => node[:postgresql][:swappiness]
+sysctl_param 'vm.swappiness' do
+  value node[:postgresql][:swappiness]
 end
 
 if node['postgresql']['overcommit'] == 2
-  sysctl "vm.overcommit_memory" do
-    variables 'vm.overcommit_memory' => 2
+  sysctl_param 'vm.overcommit_memory' do
+    value 2
   end
-  sysctl "vm.overcommit_ratio" do
-    variables 'vm.overcommit_ratio' => 100
+
+  sysctl_param 'vm.overcommit_ratio' do
+    value 100
   end
+
   if Chef::Config[:solo]
     log "fs.file-max not available under lxc" do
       level :info
     end
   else
-    sysctl "fs.file-max for postgres" do 
-      variables 'fs.file-max' => 999999
+    sysctl_param 'fs.file-max' do
+      value 999999
     end
   end
 end

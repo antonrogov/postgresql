@@ -92,6 +92,9 @@ host    replication     postgres        <%= p %>                md5
 <% @allow.each_pair do |k,v| %>
 host    all             all             <%= k %>                <%= v %>
 <% end %>
+<% node[:postgresql][:users].each do |user| %>
+host <%= node[:postgresql][:database] %> <%= user[:name] %> all md5
+<% end %>
 # Allow replication connections from localhost, by a user with the
 # replication privilege.
 #local   replication     postgres                                trust
