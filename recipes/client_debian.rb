@@ -21,7 +21,7 @@
 
 require_recipe "postgresql::pgdg"
 
-package "postgresql-client-9.2"
+package "postgresql-client-#{node[:postgresql][:version]}"
 package "libpq-dev"
 package "make"
 require_recipe "postgresql::ruby"

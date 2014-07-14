@@ -208,26 +208,12 @@ if node['postgresql']['overcommit'] == 2
 end
 
 execute "init-postgres" do
-  command "/usr/lib/postgresql/9.2/bin/initdb -D #{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data -X #{node[:postgresql][:wal_directory]} --pwfile=#{node[:postgresql][:dir]}/.org_grok --encoding=#{node[:postgresql][:encoding]} --locale=#{node[:postgresql][:locale]} -A #{node[:postgresql][:local_authentication]}"
+  command "/usr/lib/postgresql/#{node[:postgresql][:version]}/bin/initdb -D #{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data -X #{node[:postgresql][:wal_directory]} --pwfile=#{node[:postgresql][:dir]}/.org_grok --encoding=#{node[:postgresql][:encoding]} --locale=#{node[:postgresql][:locale]} -A #{node[:postgresql][:local_authentication]}"
   action :run
   user "postgres"
   not_if { FileTest.directory?("#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data") }
   notifies :create_if_missing, "file[/var/run/postgres.initdb.done]", :immediate
 end
-
-
-# NOTE: Not required
-# template "#{node[:postgresql][:hba_file]}" do
-#   source "pg_hba.conf.erb"
-#   owner "postgres"
-#   group "postgres"
-#   mode 0600
-#   variables(
-#             :method => node[:postgresql][:local_authentication],
-#             :replica => node[:postgresql][:replicas]
-#             )
-# #  notifies :reload, resources(:service => "postgresql"), :immediately
-# end
 
 execute "start postgresql" do
   command "/bin/bash --login -c 'LC_ALL="" /etc/init.d/postgresql start'"

@@ -39,7 +39,7 @@ rescue LoadError
     action :nothing
   end
   c.run_action(:install)
-  c = package "postgresql-client-9.1" do
+  c = package "postgresql-client-#{node[:postgresql][:version]}" do
     action :nothing
   end
   c.run_action(:install)
@@ -47,11 +47,11 @@ rescue LoadError
     action :nothing
   end
   d.run_action(:install)
-  e = package "make" do 
+  e = package "make" do
     action :nothing
   end
   e.run_action(:install)
-  
+
   begin
     chef_gem "pg"
   rescue Gem::Installer::ExtensionBuildError => e

@@ -7,7 +7,7 @@ apt_repository "apt.postgresql.org" do
   action :add
 end
 
-file "/etc/apt/sources.list.d/postgresql-9.2-source.list" do
+file "/etc/apt/sources.list.d/postgresql-#{node[:postgresql][:version]}-source.list" do
   action :delete
-  only_if { ::File.exists?("/etc/apt/sources.list.d/postgresql-9.2-source.list") }
+  only_if { ::File.exists?("/etc/apt/sources.list.d/postgresql-#{node[:postgresql][:version]}-source.list") }
 end
