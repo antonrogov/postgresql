@@ -22,6 +22,7 @@
 include_recipe "postgresql::pgdg"
 
 package "postgresql-client-#{node[:postgresql][:version]}"
-package "libpq-dev"
-package "make"
-include_recipe "postgresql::ruby"
+package 'libpq-dev'
+package 'make'
+package 'build-essential'
+# include_recipe "postgresql::ruby"
