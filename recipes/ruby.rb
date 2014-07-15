@@ -39,7 +39,9 @@ rescue LoadError
     action :nothing
   end
   c.run_action(:install)
-  c = package "postgresql-client-#{node[:postgresql][:version]}" do
+
+  version = node[:postgresql][:version]
+  c = package "postgresql-client-#{version == '9.2' ? '9.1' : version}" do
     action :nothing
   end
   c.run_action(:install)
