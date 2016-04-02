@@ -101,6 +101,7 @@ template "#{node[:postgresql][:dir]}/postgresql.conf" do
   group "postgres"
   mode 0600
   variables(
+            :listen => node[:postgresql][:listen],
             :data_directory => "#{node[:postgresql][:data_path]}/#{node[:postgresql][:version]}/data",
             :hba_file => "/etc/postgresql/#{node[:postgresql][:version]}/main/pg_hba.conf",
             :ident_file => node[:postgresql][:ident_file],

@@ -73,6 +73,7 @@ end
 
 # Postgresql tuning and optimization
 
+default[:postgresql][:listen]='*'
 default[:postgresql][:default_statistics_target]=100
 default[:postgresql][:max_fsm_pages]=500000
 default[:postgresql][:max_fsm_relations]=10000
